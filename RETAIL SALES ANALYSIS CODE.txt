@@ -1,0 +1,335 @@
+1.DATA INITIALIZATION AND INSPECTION 
+
+
+#importing our data
+import pandas as pd
+import numpy as np
+# --- Step 1: Data Preparation and Cleaning ---
+
+# Define the file path. Choose the path that matches your file location:
+# If the file is in a 'data' folder: 'data/retail_sales_dataset.csv'
+# If the file is in the same directory: 'retail_sales_dataset.csv'
+file_path = 'data/retail_sales_dataset.csv'
+
+
+# Load the dataset
+df = pd.read_csv(file_path) 
+
+#checking the data types
+df.dtypes
+#viewing the data
+df
+
+
+2. DATA CLEANING AND PREPROCESSING ESSENTIALS IN PANDAS
+
+# Identifying and Managing Missing Values
+df.isnull().sum
+
+#checking for duplicates
+df.duplicated()
+df.drop_duplicates()
+
+# Cleaning Column Names (Whitespace)
+df.columns.str.strip()
+
+#changing date's into correct data type   
+
+df['Date'] = pd.to_datetime(df['Date'])
+
+
+#  Reviewing Column Structure
+df.columns.to_list()
+
+
+
+3. TIME-SERIES FEATURE ENGINEERING
+
+print(df['Date'].dtype)
+# Output will likely be 'object' (meaning string) or an integer type.
+
+# Force the 'Date' column to be a datetime object
+df['Date'] = pd.to_datetime(df['Date'])
+
+# This code will now run without the AttributeError
+df['Month'] = df['Date'].dt.to_period('M') 
+monthly_sales = df.groupby('Month')['Total Amount'].sum().reset_index()
+monthly_sales['Month'] = monthly_sales['Month'].astype(str) # For plotting
+
+# Display the result to confirm
+print(monthly_sales.head())
+
+
+4.DATA CLEANING AND PRE-PROCESSING 
+
+#checking or Detecting for outliers (unsual values in the column "Price per Unit ")
+Q1 = df['Price per Unit'].quantile(0.25)
+Q3 = df['Price per Unit'].quantile(0.75)
+IQR = Q3 - Q1
+ 
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+ 
+ 
+
+
+outliers = df[(df['Price per Unit'] < lower_bound) | (df['Price per Unit'] > upper_bound)]
+outliers.head(10)
+
+
+5. DETECTING OUTLIERS (IQR METHOD)
+#checking for outliers for total amount
+Q1 = df['Total Amount'].quantile(0.25)
+Q3 = df['Total Amount'].quantile(0.75)
+IQR = Q3 - Q1
+ 
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+ 
+ 
+
+
+outliers = df[(df['Total Amount'] < lower_bound) | (df['Total Amount'] > upper_bound)]
+outliers.head(10)
+
+
+6. EXPLORATORY DATA ANALYSIS (EDA) AND VISUALIZATION
+
+#EDA PROCESS
+#Plotting the sales trends over time 
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(12, 6))
+plt.plot(monthly_sales['Month'], monthly_sales['Total Amount'], marker='o')
+plt.title('Monthly Sales Trend')
+plt.xlabel('Month')
+plt.ylabel('Total Revenue')
+plt.xticks(rotation=45)
+plt.grid(True)
+plt.show()
+
+
+7.REVIEWING COLUMN STRUCTURE
+
+df.columns.to_list
+
+
+8.Identify Top Products: Determine which Product Category drives the most revenue and quantity sold.
+
+# Creating a Revenue by Category
+revenue_by_category = df.groupby('Product Category')['Total Amount'].sum().sort_values(ascending=False).head(5)
+
+
+revenue_by_category
+
+
+8.DESCRIPTIVE ANALYSIS 
+
+  TOP PRODUCT CATEGORY ANALYSIS (BY QUANTITY)
+
+# Creating Quantity Sold by Category
+quantity_by_category = df.groupby('Product Category')['Quantity'].sum().sort_values(ascending=False).head(5)
+
+quantity_by_category
+
+
+9. VISUALIZING TOP REVENUE CATEGORIES
+
+plt.figure(figsize=(12, 5))
+revenue_by_category.plot(kind='bar', title='Top 5 Product Categories by Revenue')
+plt.ylabel('Total Revenue')
+plt.xticks(rotation=0)
+plt.show()
+
+10.  Customer Segmentation:Analyze Sales by Demographics: Determine sales performance based on Gender and Age groups to understand customer segments
+
+
+# Sales by Gender
+sales_by_gender = df.groupby('Gender')['Total Amount'].sum()
+print("Sales by Gender:\n", sales_by_gender)
+
+
+
+11.  CUSTOMER SEGMENTATION BY AGE
+
+# Sales by Age Group
+# Define age bins for segmentation
+bins = [18, 25, 35, 45, 55, 65, 100]
+labels = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+df['Age Group'] = pd.cut(df['Age'], bins=bins, labels=labels, right=False)
+
+sales_by_age = df.groupby('Age Group', observed=True)['Total Amount'].sum()
+df.to_csv(r'C:\Users\Obuobia\Downloads\PROJECT\data\retail_sales_dataset1.csv')
+print("Sales by Age Group:\n", sales_by_age)
+
+
+12. VISUALIZING SALES BY AGE GROUP
+
+plt.figure(figsize=(8, 6))
+sales_by_age.plot(kind='bar', title='Total Sales by Age Group')
+plt.ylabel('Total Revenue')
+plt.xticks(rotation=45)
+plt.show()
+
+13.df.head(5)
+
+14.FEATURE ENGINEERING
+
+15.import pandas as pd
+
+import numpy as np # Assuming 'df' is the loaded and cleaned transactional sales data# (If df isn't defined, replace with a dummy DataFrame for illustration)# Example of loading the data (Replace with your actual data source)# df = pd.read_csv('retail_transactions.csv')# --- 1. Ensure 'Date' is a datetime object and 'Total Amount' is numeric ---df['Date'] = pd.to_datetime(df['Date']) df['Total Amount'] = pd.to_numeric(df['Total Amount'], errors='coerce') df.dropna(subset=['Total Amount'], inplace=True) # Drop any rows where Total Amount is NaN# --- 2. Aggregate Sales to Monthly Frequency ---# Set the 'Date' as the indexdf_monthly = df.set_index('Date') # Group by the month and sum the total sales amountmonthly_sales = df_monthly['Total Amount'].resample('M').sum().reset_index() monthly_sales.rename(columns={'Total Amount': 'Total_Monthly_Sales'}, inplace=True) # --- 3. Time-Based Feature Engineering (Lag Features and Trends) ---# Lag Feature: Sales from the previous month (P1)monthly_sales['Sales_Lag_1'] = monthly_sales['Total_Monthly_Sales'].shift(1) # Rolling Window Feature: Mean sales over the previous 3 months (MA3)monthly_sales['Sales_MA_3'] = monthly_sales['Total_Monthly_Sales'].shift(1).rolling(window=3).mean() # Time Features: Month and Year as numerical predictorsmonthly_sales['Year'] = monthly_sales['Date'].dt.year monthly_sales['Month_of_Year'] = monthly_sales['Date'].dt.month # Drop the first few rows that contain NaN due to lag and rolling featuresmonthly_sales.dropna(inplace=True) print("Engineered Features (First 5 Rows):") print(monthly_sales.head())
+ 
+import pandas as pd
+
+import numpy as np
+
+
+16.
+
+
+ # --- REVISED Feature Engineering (Step 1) ---
+ 
+# Re-run the aggregation step to refresh 'monthly_sales'
+
+# (Assuming df is still loaded from the start)
+
+monthly_sales = df.set_index('Date')['Total Amount'].resample('M').sum().reset_index()
+
+monthly_sales.rename(columns={'Total Amount': 'Total_Monthly_Sales'}, inplace=True)
+ 
+# Feature 1: Lag 1 (Requires at least 2 months of data)
+
+monthly_sales['Sales_Lag_1'] = monthly_sales['Total_Monthly_Sales'].shift(1)
+ 
+# Feature 2: Rolling Window (Reduce window size if data is sparse)
+
+# If your data is small, REMOVE Sales_MA_3 entirely:
+
+# monthly_sales.drop(columns=['Sales_MA_3'], inplace=True)
+
+# OR reduce the window:
+
+monthly_sales['Sales_MA_2'] = monthly_sales['Total_Monthly_Sales'].shift(1).rolling(window=2).mean()
+ 
+# Time Features: Month and Year
+
+monthly_sales['Year'] = monthly_sales['Date'].dt.year
+
+monthly_sales['Month_of_Year'] = monthly_sales['Date'].dt.month
+ 
+# Drop the NaNs created by the shift/rolling features
+
+monthly_sales.dropna(inplace=True)
+ 
+# Check the final size of the data before splitting!
+
+print(f"\nFinal number of samples (months) after dropping NaNs: {len(monthly_sales)}")
+
+
+ 
+ 17. PREDICTIVE MODELLING
+
+import seaborn
+
+from sklearn.model_selection import train_test_split
+
+from sklearn.linear_model import LinearRegression
+
+from sklearn.metrics import mean_squared_error, r2_score
+
+
+18.
+
+import pandas as pd
+import numpy as np
+
+file_path = 'data/retail_sales_dataset.csv'
+
+
+# Load the dataset
+df = pd.read_csv(file_path) 
+
+df.columns.to_list()
+
+
+
+
+19.
+
+from sklearn.model_selection import train_test_split
+
+from sklearn.linear_model import LinearRegression
+
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+
+ 
+20.
+ 
+# --- REVISED Train-Test Split (Step 2) ---
+ 
+# Define the features based on what you kept (e.g., replace 'Sales_MA_3' with 'Sales_MA_2' or remove it)
+
+X = monthly_sales[['Sales_Lag_1', 'Sales_MA_2', 'Year', 'Month_of_Year']]
+
+y = monthly_sales['Total_Monthly_Sales']
+ 
+# Adjust the test size to a smaller, realistic value (e.g., 1 or 2 months)
+
+test_size = 1 # Use the last 1 month for testing
+
+# OR, use a proportion if you have enough data: test_size = int(len(X) * 0.2)
+ 
+X_train = X[:-test_size]
+
+X_test = X[-test_size:]
+
+y_train = y[:-test_size]
+
+y_test = y[-test_size:]
+
+
+ 
+print(f"New Training set size: {len(X_train)} months")
+
+
+print(f"New Testing set size: {len(X_test)} months")
+ 
+ 
+
+
+
+21.
+
+
+# --- Step 5: Predictive Model Development (Re-run this!) ---
+from sklearn.linear_model import LinearRegression
+ 
+# Initialize the model
+linear_model = LinearRegression()
+ 
+# Train the model using the training data
+# Ensure X_train and y_train are correctly defined from the clean data
+linear_model.fit(X_train, y_train)
+ 
+print("Model trained successfully. Ready to access coefficients.")
+
+ 
+
+22.
+
+# --- Access Model Coefficients (Your current failing cell) ---
+ 
+coefficients = linear_model.coef_
+ 
+feature_names = ['Sales_Lag_1', 'Sales_MA_2', 'Year', 'Month_of_Year']
+
+coef_series = pd.Series(coefficients, index=feature_names)
+ 
+print("--- Model Coefficients (Feature Importance) ---")
+
+print(coef_series.sort_values(ascending=False))
+ 
+
+
+
